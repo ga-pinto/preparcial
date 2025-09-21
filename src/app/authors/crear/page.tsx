@@ -1,20 +1,18 @@
+// src/app/authors/crear/page.tsx
 "use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AuthorForm } from "@/components/AuthorForm";
-import { useAuthorsContext } from "@/context/AuthorsContext";
+import { AuthorForm } from "@/modules/authors/ui/AuthorForm";
+import { useAuthors } from "@/modules/authors/hooks/useAuthors";
 
 export default function CreateAuthorPage() {
   const router = useRouter();
-  const { createAuthor } = useAuthorsContext();
+  const { createAuthor } = useAuthors(); // <- reemplaza useAuthorsContext
 
   const handleSubmit = async (values: Parameters<typeof createAuthor>[0]) => {
-    const result = await createAuthor(values);
-    if (!result) {
-      return false;
-    }
-
+    const ok = await createAuthor(values);
+    if (!ok) return false;
     router.push("/authors");
     return true;
   };

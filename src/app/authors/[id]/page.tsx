@@ -1,17 +1,22 @@
+// src/app/authors/[id]/page.tsx
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { AuthorForm } from "@/components/AuthorForm";
-import { useAuthorsContext } from "@/context/AuthorsContext";
-import { useMemo, use } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useMemo } from "react";
+import { AuthorForm } from "@/modules/authors/ui/AuthorForm";
+import { useAuthors } from "@/modules/authors/hooks/useAuthors";
 
-export default function EditAuthorPage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditAuthorPage() {
   const router = useRouter();
-  const { authors, loading, error, updateAuthor } = useAuthorsContext();
-  const resolvedParams = use(params);
+  const { id } = useParams<{ id: string }>();
+  const { authors, loading, error, updateAuthor } = useAuthors();
 
-  const author = useMemo(() => authors.find((item) => item.id === Number(resolvedParams.id)), [authors, resolvedParams.id]);
+  const authorId = Number(id);
+  const author = useMemo(
+    () => authors.find((a) => a.id === authorId),
+    [authors, authorId]
+  );
 
   if (loading) {
     return (
@@ -33,10 +38,7 @@ export default function EditAuthorPage({ params }: { params: Promise<{ id: strin
             Revisa que el enlace sea correcto o vuelve al listado para seleccionar otro autor.
           </p>
         </header>
-        <Link
-          href="/authors"
-          className="text-sm font-semibold text-sky-600 transition hover:text-sky-500"
-        >
+        <Link href="/authors" className="text-sm font-semibold text-sky-600 hover:text-sky-500">
           Volver al listado
         </Link>
       </section>
@@ -44,11 +46,8 @@ export default function EditAuthorPage({ params }: { params: Promise<{ id: strin
   }
 
   const handleSubmit = async (values: Parameters<typeof updateAuthor>[1]) => {
-    const result = await updateAuthor(author.id, values);
-    if (!result) {
-      return false;
-    }
-
+    const ok = await updateAuthor(author.id, values);
+    if (!ok) return false;
     router.push("/authors");
     return true;
   };
@@ -60,16 +59,14 @@ export default function EditAuthorPage({ params }: { params: Promise<{ id: strin
           Editar autor
         </p>
         <h1 className="text-3xl font-bold text-slate-900">Actualiza la información</h1>
-        <p className="text-sm text-slate-500">
-          Modifica los datos necesarios y guarda los cambios.
-        </p>
+        <p className="text-sm text-slate-500">Modifica los datos necesarios y guarda los cambios.</p>
       </header>
 
-      {error ? (
+      {error && (
         <p className="rounded border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
           {error}
         </p>
-      ) : null}
+      )}
 
       <AuthorForm
         defaultValues={author}
@@ -78,10 +75,7 @@ export default function EditAuthorPage({ params }: { params: Promise<{ id: strin
         onCancel={() => router.push("/authors")}
       />
 
-      <Link
-        href="/authors"
-        className="text-sm font-semibold text-sky-600 transition hover:text-sky-500"
-      >
+      <Link href="/authors" className="text-sm font-semibold text-sky-600 hover:text-sky-500">
         Volver al listado
       </Link>
     </section>
