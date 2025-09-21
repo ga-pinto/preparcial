@@ -2,9 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const nav = [
-  { href: "/authors", label: "Autores" },
-];
+const nav = [];
 
 export default function Header() {
   const pathname = usePathname();
