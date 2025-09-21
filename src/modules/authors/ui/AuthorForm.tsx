@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { AuthorFormData } from "@/context/AuthorsContext";
+
+export type AuthorFormData = {
+  name: string;
+  birthDate: string;  
+  description: string;
+  image: string;       
+};
 
 type AuthorFormProps = {
   defaultValues?: AuthorFormData;
@@ -27,6 +33,8 @@ export function AuthorForm({ defaultValues, submitLabel, onSubmit, onCancel }: A
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
+
     setIsSubmitting(true);
     setFeedback(null);
 
@@ -38,9 +46,7 @@ export function AuthorForm({ defaultValues, submitLabel, onSubmit, onCancel }: A
         image: image.trim(),
       });
 
-      if (result !== false) {
-        setFeedback("Cambios guardados con éxito");
-      }
+      if (result !== false) setFeedback("Cambios guardados con éxito");
     } catch (error) {
       const message = error instanceof Error ? error.message : "No se pudo completar la acción";
       setFeedback(message);
@@ -52,64 +58,60 @@ export function AuthorForm({ defaultValues, submitLabel, onSubmit, onCancel }: A
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
       <div className="grid gap-2">
-        <label className="font-semibold" htmlFor="name">
-          Nombre
-        </label>
+        <label className="font-semibold" htmlFor="name">Nombre</label>
         <input
           id="name"
           name="name"
           type="text"
           required
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={(e) => setName(e.target.value)}
           className="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
           placeholder="Nombre del autor"
+          disabled={isSubmitting}
         />
       </div>
 
       <div className="grid gap-2">
-        <label className="font-semibold" htmlFor="birthDate">
-          Fecha de nacimiento
-        </label>
+        <label className="font-semibold" htmlFor="birthDate">Fecha de nacimiento</label>
         <input
           id="birthDate"
           name="birthDate"
           type="date"
           required
           value={birthDate}
-          onChange={(event) => setBirthDate(event.target.value)}
+          onChange={(e) => setBirthDate(e.target.value)}
           className="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
+          disabled={isSubmitting}
         />
       </div>
 
       <div className="grid gap-2">
-        <label className="font-semibold" htmlFor="description">
-          Descripción
-        </label>
+        <label className="font-semibold" htmlFor="description">Descripción</label>
         <textarea
           id="description"
           name="description"
           required
           value={description}
-          onChange={(event) => setDescription(event.target.value)}
+          onChange={(e) => setDescription(e.target.value)}
           className="min-h-[120px] rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
           placeholder="Breve descripción del autor"
+          disabled={isSubmitting}
         />
       </div>
 
       <div className="grid gap-2">
-        <label className="font-semibold" htmlFor="image">
-          URL de la imagen
-        </label>
+        <label className="font-semibold" htmlFor="image">URL de la imagen</label>
         <input
           id="image"
           name="image"
           type="url"
           required
           value={image}
-          onChange={(event) => setImage(event.target.value)}
+          onChange={(e) => setImage(e.target.value)}
           className="rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
           placeholder="https://"
+          disabled={isSubmitting}
         />
       </div>
 
@@ -121,11 +123,13 @@ export function AuthorForm({ defaultValues, submitLabel, onSubmit, onCancel }: A
         >
           {isSubmitting ? "Guardando..." : submitLabel}
         </button>
+
         {onCancel ? (
           <button
             type="button"
             onClick={onCancel}
             className="rounded border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+            disabled={isSubmitting}
           >
             Cancelar
           </button>
