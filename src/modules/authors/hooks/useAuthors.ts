@@ -22,8 +22,7 @@ type CrudReturn = {
   refresh: () => Promise<void>;
 };
 
-// ✅ Usa el proxy del App Router para evitar CORS
-const API_BASE = "/api/authors";
+const API_ENDPOINT = "http://127.0.0.1:8080/api/authors";
 
 export function useAuthors(): CrudReturn {
   const [authors, setAuthors] = useState<Author[]>([]);
@@ -31,13 +30,14 @@ export function useAuthors(): CrudReturn {
   const [error, setError] = useState<string | null>(null);
 
   const handleResponseError = useCallback(async (response: Response) => {
-    let details = `HTTP ${response.status}`;
+    let details = "Error inesperado";
     try {
       const body = await response.json();
-      if (body?.message) details = body.message;
-      if (body?.error) details = body.error;
+      if (body?.message) {
+        details = body.message;
+      }
     } catch {
-      /* ignore parse errors */
+      // ignoramos errores de parseo
     }
     throw new Error(details);
   }, []);
@@ -46,15 +46,17 @@ export function useAuthors(): CrudReturn {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(API_BASE, { cache: "no-store" });
-      if (!res.ok) {
-        await handleResponseError(res);
+      const response = await fetch(API_ENDPOINT, { cache: "no-store" });
+      if (!response.ok) {
+        await handleResponseError(response);
         return;
       }
-      const data = (await res.json()) as Author[];
-      setAuthors(data ?? []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "No se pudo cargar la lista");
+      const data = (await response.json()) as Author[];
+      setAuthors(data);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "No se pudo cargar la lista";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -67,70 +69,87 @@ export function useAuthors(): CrudReturn {
   const createAuthor = useCallback(
     async (values: AuthorFormData) => {
       try {
-        const res = await fetch(API_BASE, {
+        const response = await fetch(API_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(values),
         });
-        if (!res.ok) {
-          await handleResponseError(res);
+
+        if (!response.ok) {
+          await handleResponseError(response);
           return null;
         }
-        const created = (await res.json()) as Author;
+
+        const created = (await response.json()) as Author;
         setAuthors((prev) => [...prev, created]);
         return created;
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "No se pudo crear el autor");
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "No se pudo crear el autor";
+        setError(message);
         return null;
       }
     },
-    [handleResponseError],
+    [handleResponseError]
   );
 
   const updateAuthor = useCallback(
     async (id: number, values: AuthorFormData) => {
       try {
-        // Si tu backend usa PUT completo, cambia method a "PUT"
-        const res = await fetch(`${API_BASE}/${id}`, {
-          method: "PATCH",
+        const response = await fetch(API_ENDPOINT, {
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values),
+          body: JSON.stringify({ id, ...values }),
         });
-        if (!res.ok) {
-          await handleResponseError(res);
+
+        if (!response.ok) {
+          await handleResponseError(response);
           return null;
         }
-        // Algunas APIs devuelven el objeto actualizado, otras no:
-        const updated = (await res.json().catch(() => null)) as Author | null;
+
+        const updated = (await response.json()) as Author;
         setAuthors((prev) =>
-          prev.map((a) => (a.id === id ? (updated ?? { ...a, ...values, id }) : a)),
+          prev.map((author) => (author.id === id ? updated : author))
         );
-        return updated ?? { ...values, id };
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "No se pudo actualizar el autor");
+        return updated;
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "No se pudo actualizar el autor";
+        setError(message);
         return null;
       }
     },
-    [handleResponseError],
+    [handleResponseError]
   );
 
   const deleteAuthor = useCallback(
     async (id: number) => {
       try {
-        // ❗ No envíes body en DELETE; usa la URL con /:id
-        const res = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
-        if (!res.ok && res.status !== 204) {
-          await handleResponseError(res);
+        const response = await fetch(API_ENDPOINT, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+
+        if (!response.ok) {
+          await handleResponseError(response);
           return false;
         }
-        setAuthors((prev) => prev.filter((a) => a.id !== id));
+
+        setAuthors((prev) => prev.filter((author) => author.id !== id));
         return true;
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "No se pudo eliminar el autor");
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "No se pudo eliminar el autor";
+        setError(message);
         return false;
       }
     },
-    [handleResponseError],
+    [handleResponseError]
   );
 
   const value = useMemo<CrudReturn>(
@@ -143,7 +162,7 @@ export function useAuthors(): CrudReturn {
       deleteAuthor,
       refresh: fetchAuthors,
     }),
-    [authors, loading, error, createAuthor, updateAuthor, deleteAuthor, fetchAuthors],
+    [authors, loading, error, createAuthor, updateAuthor, deleteAuthor, fetchAuthors]
   );
 
   return value;
